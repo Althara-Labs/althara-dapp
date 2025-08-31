@@ -233,10 +233,16 @@ const ConnectWalletComponent = () => {
                   Disconnect Wallet
                 </button>
                 <Link 
-                  href="/vendor-dashboard" 
+                  href="/vendor-settings" 
                   className="block w-full py-3 px-6 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors text-center select-none"
                 >
                   → Vendor Settings
+                </Link>
+                <Link 
+                  href="/tenders" 
+                  className="block w-full py-3 px-6 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 active:bg-green-800 transition-colors text-center select-none"
+                >
+                  📋 Browse Tenders
                 </Link>
               </div>
               <div className="mt-6">
