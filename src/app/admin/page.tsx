@@ -11,7 +11,7 @@ const GOVERNMENT_ROLE = "0x71840dc4906352362b0cdaf79870196c8e42acafade72d5d5a6d5
 export default function AdminPage() {
   const { address, isConnected } = useAccount();
   const [newAddress, setNewAddress] = useState("");
-  const [selectedRole, setSelectedRole] = useState<`0x${string}`>(GOVERNMENT_ROLE);
+  const [selectedRole, setSelectedRole] = useState<string>(GOVERNMENT_ROLE);
   const [successMessage, setSuccessMessage] = useState("");
 
   // Check if user has admin role
@@ -57,7 +57,7 @@ export default function AdminPage() {
         address: tenderContractAddress,
         abi: tenderContractABI,
         functionName: "grantRole",
-        args: [selectedRole, newAddress],
+        args: [selectedRole as `0x${string}`, newAddress as `0x${string}`],
       });
     } catch (error) {
       console.error("Error granting role:", error);
@@ -102,7 +102,7 @@ export default function AdminPage() {
         <div className="bg-white p-8 rounded-lg shadow-lg text-center">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">You don't have admin permissions.</p>
+            <p className="text-red-800">You don&apos;t have admin permissions.</p>
             <p className="text-red-600 text-sm mt-2">Address: {address}</p>
           </div>
         </div>
@@ -127,7 +127,7 @@ export default function AdminPage() {
                   </label>
                                      <select
                      value={selectedRole}
-                     onChange={(e) => setSelectedRole(e.target.value as `0x${string}`)}
+                     onChange={(e) => setSelectedRole(e.target.value)}
                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                    >
                      <option value={GOVERNMENT_ROLE}>Government Role</option>

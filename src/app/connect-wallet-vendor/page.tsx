@@ -18,7 +18,7 @@ const ConnectWalletComponent = () => {
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
 
   const [isOnboarding, setIsOnboarding] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [, setIsRegistered] = useState(false);
 
   const [organizationName, setOrganizationName] = useState("");
   const [headOfBids, setHeadOfBids] = useState("");

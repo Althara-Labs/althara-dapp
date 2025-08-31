@@ -10,10 +10,11 @@ const client = createPublicClient({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const bidId = parseInt(params.id);
+    const { id } = await params;
+    const bidId = parseInt(id);
     
     if (isNaN(bidId) || bidId < 0) {
       return NextResponse.json(

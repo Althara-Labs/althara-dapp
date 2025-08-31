@@ -53,6 +53,8 @@ export default function TenderDetailsPage() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [submittingBid, setSubmittingBid] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [acceptingBid, setAcceptingBid] = useState<number | null>(null);
+  const [showAcceptConfirmation, setShowAcceptConfirmation] = useState<number | null>(null);
 
   // Contract reads
   const { data: tenderData, error: tenderError } = useReadContract({
@@ -65,15 +67,7 @@ export default function TenderDetailsPage() {
     },
   });
 
-  const { data: vendorRole } = useReadContract({
-    address: bidSubmissionContractAddress,
-    abi: bidSubmissionContractABI,
-    functionName: "hasRole",
-    args: ["0x0000000000000000000000000000000000000000000000000000000000000000", address as `0x${string}`], // DEFAULT_ADMIN_ROLE
-    query: {
-      enabled: !!address,
-    },
-  });
+  // Vendor role check removed as it's not being used
 
   const { data: governmentRole } = useReadContract({
     address: tenderContractAddress,
@@ -255,6 +249,44 @@ export default function TenderDetailsPage() {
     }
   };
 
+  // Handle bid acceptance
+  const handleAcceptBid = (bidIndex: number) => {
+    setShowAcceptConfirmation(bidIndex);
+  };
+
+  const handleConfirmedAcceptBid = async (bidIndex: number) => {
+    try {
+      setAcceptingBid(bidIndex);
+      setShowAcceptConfirmation(null);
+      
+      // Simulate transaction processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update bid status locally (in a real app, this would be a smart contract call)
+      setBids(prevBids => 
+        prevBids.map((bid, index) => 
+          index === bidIndex 
+            ? { ...bid, status: 1 } // 1 = Accepted
+            : bid
+        )
+      );
+      
+      // Show success message
+      alert(`Bid accepted! Payment of ${formatEther(bids[bidIndex].price)} ETH will be transferred from government to vendor.`);
+      
+      // Refresh the page to update tender status
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
+    } catch (error) {
+      console.error("Error accepting bid:", error);
+      setError("Failed to accept bid. Please try again.");
+    } finally {
+      setAcceptingBid(null);
+    }
+  };
+
   // Parse tender description (assuming it contains title and deadline)
   const parseTenderDescription = (description: string) => {
     // Simple parsing - you might need to adjust based on your data format
@@ -292,51 +324,8 @@ export default function TenderDetailsPage() {
     );
   }
 
-  // Show connection prompt if not connected - but allow viewing tender details
-  if (!isConnected) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-blue-600 text-white shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-white text-2xl font-bold">Althara Pacta - Decentralized Tender Management</h1>
-              </div>
-              <button
-                onClick={() => router.push("/tenders")}
-                className="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg transition-colors"
-              >
-                ← Back to Tenders
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Connection Banner */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <span className="text-yellow-800 font-medium">Wallet Not Connected</span>
-              </div>
-              <button
-                onClick={() => router.push("/connect-wallet-vendor")}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              >
-                Connect Wallet
-              </button>
-            </div>
-            <p className="text-yellow-700 text-sm mt-2">
-              Connect your wallet to submit bids and access full functionality.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Show connection banner if not connected - but allow viewing tender details
+  const showConnectionBanner = !isConnected;
 
   if (error || tenderError) {
     return (
@@ -363,7 +352,7 @@ export default function TenderDetailsPage() {
         <div className="text-center">
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
             <p className="font-bold">Tender Not Found</p>
-            <p>The tender you're looking for doesn't exist.</p>
+            <p>The tender you&apos;re looking for doesn&apos;t exist.</p>
             <button
               onClick={() => router.push("/tenders")}
               className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -400,6 +389,28 @@ export default function TenderDetailsPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Connection Banner */}
+        {showConnectionBanner && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <span className="text-yellow-800 font-medium">Wallet Not Connected</span>
+              </div>
+              <button
+                onClick={() => router.push("/connect-wallet-vendor")}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                Connect Wallet
+              </button>
+            </div>
+            <p className="text-yellow-700 text-sm mt-2">
+              Connect your wallet to submit bids and access full functionality.
+            </p>
+          </div>
+        )}
         {/* Tender Details Card */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -447,23 +458,24 @@ export default function TenderDetailsPage() {
               </div>
             </div>
 
-            <div>
-              {tender.requirementsCid && (
-                <div className="mb-4">
-                  <h4 className="font-medium text-gray-700 mb-2">Official Documents</h4>
-                  <a
-                    href={`https://ipfs.io/ipfs/${tender.requirementsCid}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    View Official Documents
-                  </a>
-                </div>
-              )}
+                                                   <div>
+                {tender.requirementsCid && tender.requirementsCid !== '[object Object]' && tender.requirementsCid !== '' && tender.requirementsCid.length > 10 && (
+                  <div className="mb-4">
+                    <h4 className="font-medium text-gray-700 mb-2">Official Documents</h4>
+                    <a
+                      href={`https://ipfs.io/ipfs/${tender.requirementsCid}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      View Official Documents
+                    </a>
+                    <p className="text-xs text-gray-500 mt-1">CID: {tender.requirementsCid}</p>
+                  </div>
+                )}
 
               {isGovernment && !tender.completed && (
                 <button
@@ -484,17 +496,25 @@ export default function TenderDetailsPage() {
 
         {/* Bids Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Bids ({bids.length})</h3>
-            {isVendor && !tender.completed && (
-              <button
-                onClick={() => setShowBidForm(!showBidForm)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {showBidForm ? "Cancel" : "Submit Bid"}
-              </button>
-            )}
-          </div>
+                     <div className="flex items-center justify-between mb-6">
+             <h3 className="text-xl font-bold text-gray-900">Bids ({bids.length})</h3>
+             <div className="flex space-x-2">
+               <button
+                 onClick={() => window.location.reload()}
+                 className="bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+               >
+                 Refresh
+               </button>
+               {isVendor && !tender.completed && (
+                 <button
+                   onClick={() => setShowBidForm(!showBidForm)}
+                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                 >
+                   {showBidForm ? "Cancel" : "Submit Bid"}
+                 </button>
+               )}
+             </div>
+           </div>
 
           {/* Bid Submission Form */}
           {showBidForm && isVendor && !tender.completed && (
@@ -505,43 +525,43 @@ export default function TenderDetailsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Bid Price (ETH)
                   </label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    min="0"
-                    value={bidFormData.price}
-                    onChange={(e) => setBidFormData(prev => ({ ...prev, price: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.0"
-                    required
-                  />
+                                     <input
+                     type="number"
+                     step="0.001"
+                     min="0"
+                     value={bidFormData.price}
+                     onChange={(e) => setBidFormData(prev => ({ ...prev, price: e.target.value }))}
+                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
+                     placeholder="0.0"
+                     required
+                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Bid Description
                   </label>
-                  <textarea
-                    value={bidFormData.description}
-                    onChange={(e) => setBidFormData(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={4}
-                    placeholder="Describe your proposal and approach..."
-                    required
-                  />
+                                     <textarea
+                     value={bidFormData.description}
+                     onChange={(e) => setBidFormData(prev => ({ ...prev, description: e.target.value }))}
+                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-500"
+                     rows={4}
+                     placeholder="Describe your proposal and approach..."
+                     required
+                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Proposal Document
                   </label>
-                  <input
-                    type="file"
-                    onChange={handleFileChange}
-                    accept=".pdf,.doc,.docx,.txt"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                                     <input
+                     type="file"
+                     onChange={handleFileChange}
+                     accept=".pdf,.doc,.docx,.txt"
+                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                     required
+                   />
                   <p className="text-sm text-gray-500 mt-1">
                     Supported formats: PDF, DOC, DOCX, TXT (max 10MB)
                   </p>
@@ -576,62 +596,75 @@ export default function TenderDetailsPage() {
             </div>
           )}
 
-          {/* Bids List */}
-          {bids.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No bids submitted yet.</p>
-              {!isVendor && !tender.completed && (
-                <p className="text-sm text-gray-400 mt-2">
-                  Connect your wallet as a vendor to submit a bid.
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {bids.map((bid, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h5 className="font-semibold text-gray-900">
-                        Bid from {bid.vendor.slice(0, 6)}...{bid.vendor.slice(-4)}
-                      </h5>
-                      <p className="text-sm text-gray-500">
-                        Submitted: {formatTimestamp(bid.submittedAt)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-blue-600">
-                        {formatEther(bid.price)} ETH
-                      </div>
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        bid.status === 1 ? 'bg-green-100 text-green-800' :
-                        bid.status === 2 ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {getBidStatus(bid.status)}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <p className="text-gray-600 mb-3">{bid.description}</p>
-                  
-                  {bid.proposalCid && (
-                    <a
-                      href={`https://ipfs.io/ipfs/${bid.proposalCid}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm"
-                    >
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                      View Proposal Document
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+                     {/* Bids List */}
+           {bids.length === 0 ? (
+             <div className="text-center py-8">
+               <p className="text-gray-500">No bids submitted yet.</p>
+               {!isVendor && !tender.completed && (
+                 <p className="text-sm text-gray-400 mt-2">
+                   Connect your wallet as a vendor to submit a bid.
+                 </p>
+               )}
+             </div>
+           ) : (
+             <div className="space-y-4">
+               {bids.map((bid, index) => (
+                 <div key={index} className="border border-gray-200 rounded-lg p-4">
+                   <div className="flex items-center justify-between mb-3">
+                     <div>
+                       <h5 className="font-semibold text-gray-900">
+                         Bid from {bid.vendor.slice(0, 6)}...{bid.vendor.slice(-4)}
+                       </h5>
+                       <p className="text-sm text-gray-500">
+                         Submitted: {formatTimestamp(bid.submittedAt)}
+                       </p>
+                     </div>
+                     <div className="text-right">
+                       <div className="text-lg font-bold text-blue-600">
+                         {formatEther(bid.price)} ETH
+                       </div>
+                       <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                         bid.status === 1 ? 'bg-green-100 text-green-800' :
+                         bid.status === 2 ? 'bg-red-100 text-red-800' :
+                         'bg-yellow-100 text-yellow-800'
+                       }`}>
+                         {getBidStatus(bid.status)}
+                       </span>
+                     </div>
+                   </div>
+                   
+                   <p className="text-gray-600 mb-3">{bid.description}</p>
+                   
+                                       <div className="flex items-center justify-between">
+                      {bid.proposalCid && bid.proposalCid !== '[object Object]' && bid.proposalCid !== '' && bid.proposalCid.length > 10 && (
+                        <a
+                          href={`https://ipfs.io/ipfs/${bid.proposalCid}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                          View Proposal Document
+                        </a>
+                      )}
+                     
+                     {/* Accept Bid Button for Government Users */}
+                     {isGovernment && !tender.completed && bid.status === 0 && (
+                       <button
+                         onClick={() => handleAcceptBid(index)}
+                         disabled={acceptingBid === index}
+                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm"
+                       >
+                         {acceptingBid === index ? "Processing..." : "Accept Bid"}
+                       </button>
+                     )}
+                   </div>
+                 </div>
+               ))}
+             </div>
+           )}
         </div>
 
         {/* Error Display */}
@@ -642,41 +675,82 @@ export default function TenderDetailsPage() {
           </div>
         )}
 
-        {/* Confirmation Modal */}
-        {showConfirmation && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Bid Submission</h3>
-              <div className="space-y-3 mb-6">
-                <p className="text-gray-600">
-                  <strong>Bid Price:</strong> {bidFormData.price} ETH
-                </p>
-                <p className="text-gray-600">
-                  <strong>Service Fee:</strong> {serviceFee ? formatEther(serviceFee) : "0.005"} ETH
-                </p>
-                <p className="text-gray-600">
-                  <strong>Total Cost:</strong> {(parseFloat(bidFormData.price) + (serviceFee ? parseFloat(formatEther(serviceFee)) : 0.005)).toFixed(6)} ETH
-                </p>
-              </div>
-              <div className="flex space-x-4">
-                <button
-                  onClick={handleConfirmedBidSubmit}
-                  disabled={submittingBid}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                >
-                  {submittingBid ? "Submitting..." : "Confirm & Submit"}
-                </button>
-                <button
-                  onClick={() => setShowConfirmation(false)}
-                  disabled={submittingBid}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+                 {/* Bid Submission Confirmation Modal */}
+         {showConfirmation && (
+           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+               <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Bid Submission</h3>
+               <div className="space-y-3 mb-6">
+                 <p className="text-gray-600">
+                   <strong>Bid Price:</strong> {bidFormData.price} ETH
+                 </p>
+                 <p className="text-gray-600">
+                   <strong>Service Fee:</strong> {serviceFee ? formatEther(serviceFee) : "0.005"} ETH
+                 </p>
+                 <p className="text-gray-600">
+                   <strong>Total Cost:</strong> {(parseFloat(bidFormData.price) + (serviceFee ? parseFloat(formatEther(serviceFee)) : 0.005)).toFixed(6)} ETH
+                 </p>
+               </div>
+               <div className="flex space-x-4">
+                 <button
+                   onClick={handleConfirmedBidSubmit}
+                   disabled={submittingBid}
+                   className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                 >
+                   {submittingBid ? "Submitting..." : "Confirm & Submit"}
+                 </button>
+                 <button
+                   onClick={() => setShowConfirmation(false)}
+                   disabled={submittingBid}
+                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                 >
+                   Cancel
+                 </button>
+               </div>
+             </div>
+           </div>
+         )}
+
+         {/* Accept Bid Confirmation Modal */}
+         {showAcceptConfirmation !== null && (
+           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+               <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Bid Acceptance</h3>
+               <div className="space-y-3 mb-6">
+                 <p className="text-gray-600">
+                   <strong>Bid Price:</strong> {formatEther(bids[showAcceptConfirmation].price)} ETH
+                 </p>
+                 <p className="text-gray-600">
+                   <strong>Vendor:</strong> {bids[showAcceptConfirmation].vendor.slice(0, 6)}...{bids[showAcceptConfirmation].vendor.slice(-4)}
+                 </p>
+                 <p className="text-gray-600">
+                   <strong>Description:</strong> {bids[showAcceptConfirmation].description.substring(0, 100)}...
+                 </p>
+                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                   <p className="text-yellow-800 text-sm">
+                     <strong>Note:</strong> This will trigger a payment transaction of {formatEther(bids[showAcceptConfirmation].price)} ETH from the government to the vendor.
+                   </p>
+                 </div>
+               </div>
+               <div className="flex space-x-4">
+                 <button
+                   onClick={() => handleConfirmedAcceptBid(showAcceptConfirmation)}
+                   disabled={acceptingBid === showAcceptConfirmation}
+                   className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                 >
+                   {acceptingBid === showAcceptConfirmation ? "Processing..." : "Accept & Pay"}
+                 </button>
+                 <button
+                   onClick={() => setShowAcceptConfirmation(null)}
+                   disabled={acceptingBid === showAcceptConfirmation}
+                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                 >
+                   Cancel
+                 </button>
+               </div>
+             </div>
+           </div>
+         )}
       </div>
     </div>
   );

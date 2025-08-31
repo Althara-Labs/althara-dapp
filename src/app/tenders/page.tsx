@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
-import { tenderContractAddress, tenderContractABI } from "../../../lib/contracts/index";
+import { } from "../../../lib/contracts/index";
 import Image from "next/image";
+import Link from "next/link";
 
 interface Tender {
   id: number;
@@ -12,8 +13,10 @@ interface Tender {
   budget: string; // Changed from bigint to string since API returns string
   requirementsCid: string;
   government: boolean; // Changed from string to boolean based on API response
-  isActive: any; // Changed to any since API returns array
+  isActive: unknown; // Changed to unknown since API returns array
   createdAt: string; // Changed from bigint to string since API returns string
+  bidCount?: number; // Number of bids
+  hasAcceptedBid?: boolean; // Whether any bid has been accepted
 }
 
 export default function TendersPage() {
@@ -22,7 +25,7 @@ export default function TendersPage() {
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [, setRetryCount] = useState(0);
   const [isCached, setIsCached] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -108,7 +111,11 @@ export default function TendersPage() {
     };
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, hasAcceptedBid?: boolean) => {
+    if (hasAcceptedBid) {
+      return 'bg-purple-100 text-purple-800 border-purple-200';
+    }
+    
     switch (status.toLowerCase()) {
       case 'open':
         return 'bg-green-100 text-green-800 border-green-200';
@@ -167,27 +174,36 @@ export default function TendersPage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center py-4">
             {/* Logo - Links to landing page */}
-            <a href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <div className="w-8 h-8flex items-center justify-center">
-              <Image src="/althara pacta logo.png" alt="Althara Pacta" width={32} height={32} />
-              </div>
+            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+                             <div className="w-8 h-8 flex items-center justify-center">
+                 <Image src="/althara pacta logo.png" alt="Althara Pacta" width={32} height={32} />
+               </div>
               <span className="text-xl font-bold text-gray-900">Althara Pacta</span>
-            </a>
+            </Link>
             
-            {/* Navigation Links */}
-            <div className="flex items-center space-x-4">
-              <a 
-                href="/tenders/create-tender"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                Create Tender
-              </a>
-              {isConnected && (
-                <span className="text-sm text-blue-600">
-                  Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
-                </span>
-              )}
-            </div>
+                         {/* Navigation Links */}
+             <div className="flex items-center space-x-4">
+               {!isConnected ? (
+                 <button
+                   onClick={() => router.push("/connect-wallet-vendor")}
+                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                 >
+                   Connect Wallet
+                 </button>
+               ) : (
+                 <>
+                   <Link 
+                     href="/tenders/create-tender"
+                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                   >
+                     Create Tender
+                   </Link>
+                   <span className="text-sm text-blue-600">
+                     Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
+                   </span>
+                 </>
+               )}
+             </div>
           </div>
         </div>
       </nav>
@@ -315,12 +331,22 @@ export default function TendersPage() {
                 const parsed = parseDescription(tender.description);
                                  return (
                    <div key={tender.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 p-6 hover:shadow-xl hover:scale-105 transition-all duration-300 transform">
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-black line-clamp-2">{parsed.title}</h3>
-                                             <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(parsed.status)} animate-pulse`}>
-                         {parsed.status}
-                       </span>
-                    </div>
+                                         <div className="flex items-start justify-between mb-4">
+                       <h3 className="text-lg font-semibold text-black line-clamp-2">{parsed.title}</h3>
+                       <div className="flex flex-col items-end space-y-1">
+                         <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(parsed.status, tender.hasAcceptedBid)}`}>
+                           {tender.hasAcceptedBid ? 'Awarded' : parsed.status}
+                         </span>
+                         <span className="text-xs text-gray-500">
+                           {tender.isActive ? 'Active' : 'Inactive'}
+                         </span>
+                         {tender.bidCount !== undefined && (
+                           <span className="text-xs text-blue-600 font-medium">
+                             {tender.bidCount} bid{tender.bidCount !== 1 ? 's' : ''}
+                           </span>
+                         )}
+                       </div>
+                     </div>
 
                     <p className="text-gray-600 text-sm mb-4 line-clamp-3">{parsed.description}</p>
 
@@ -345,13 +371,18 @@ export default function TendersPage() {
                         <span className="text-sm text-gray-600">{formatDate(tender.createdAt)}</span>
                       </div>
 
-                                             {tender.requirementsCid && tender.requirementsCid !== '[object Object]' && (
+                                                                                           {tender.requirementsCid && tender.requirementsCid !== '[object Object]' && tender.requirementsCid !== '' && tender.requirementsCid.length > 10 && (
                          <div className="pt-3 border-t border-gray-200">
                            <div className="flex items-center justify-between">
                              <span className="text-sm font-medium text-gray-700">Documents:</span>
-                             <span className="text-xs text-blue-600 font-mono bg-blue-50 px-2 py-1 rounded">
-                               {tender.requirementsCid.slice(0, 8)}...
-                             </span>
+                             <a
+                               href={`https://ipfs.io/ipfs/${tender.requirementsCid}`}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="text-xs text-blue-600 font-mono bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                             >
+                               View Docs
+                             </a>
                            </div>
                          </div>
                        )}

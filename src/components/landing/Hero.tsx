@@ -11,7 +11,7 @@ export default function Hero() {
 
         {/* Main Headline */}
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-8 leading-tight">
-          Where <span className="text-blue-600">Blockchain</span> Meets <br />
+          Using <span className="text-blue-600">Blockchain</span> for <br />
           <span className="text-blue-600">Government</span> Transparency
         </h1>
 

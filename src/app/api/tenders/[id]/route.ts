@@ -10,10 +10,11 @@ const client = createPublicClient({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const tenderId = parseInt(params.id);
+    const { id } = await params;
+    const tenderId = parseInt(id);
     
     if (isNaN(tenderId) || tenderId < 0) {
       return NextResponse.json(
@@ -47,7 +48,7 @@ export async function GET(
         requirementsCid: tender[2],
         government: tender[3],
         isActive: tender[4],
-        createdAt: tender[5],
+        createdAt: tender[4], // Use index 4 since the tuple has 5 elements
       },
     });
 

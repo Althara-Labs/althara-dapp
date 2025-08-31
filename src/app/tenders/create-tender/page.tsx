@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAccount, useContractRead, useContractWrite } from "wagmi";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { tenderContractAddress, tenderContractABI } from "../../../../lib/contracts/index";
 // GOVERNMENT_ROLE hash - keccak256 hash of "GOVERNMENT_ROLE"
 const GOVERNMENT_ROLE = "0x71840dc4906352362b0cdaf79870196c8e42acafade72d5d5a6d59291253dce1";
@@ -234,23 +235,23 @@ export default function CreateTender() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center py-4">
             {/* Logo - Links to landing page */}
-            <a href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <span className="text-xl font-bold text-gray-900">Althara Pacta</span>
-            </a>
+            </Link>
             
             {/* Navigation Links */}
             <div className="flex items-center space-x-4">
-              <a 
+              <Link 
                 href="/tenders"
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
               >
                 View Tenders
-              </a>
+              </Link>
             </div>
           </div>
         </div>

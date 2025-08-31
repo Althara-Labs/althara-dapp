@@ -10,13 +10,13 @@ const client = createPublicClient({
 
 // Simple in-memory cache (in production, consider using Redis or similar)
 let tenderCache: {
-  data: any;
+  data: unknown;
   timestamp: number;
 } | null = null;
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check cache first
     if (tenderCache && Date.now() - tenderCache.timestamp < CACHE_DURATION) {
@@ -83,20 +83,23 @@ export async function GET(request: NextRequest) {
       new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Timeout fetching tenders')), 30000)
       )
-    ]) as any[][];
+    ]) as unknown[][];
     
     // Flatten results
     const tenderResults = batchResults.flat();
     
-    const tenders = tenderResults.map((tender: any, index: number) => ({
-      id: index + 1, // Use actual tender ID (starting from 1)
-      description: tender[0],
-      budget: tender[1].toString(),
-      requirementsCid: tender[2],
-      government: tender[3],
-      isActive: tender[4],
-      createdAt: tender[4].toString(), // Use index 4 since the tuple has 5 elements
-    }));
+    const tenders = tenderResults.map((tender: unknown, index: number) => {
+      const tenderData = tender as [string, bigint, string, boolean, bigint];
+      return {
+        id: index + 1, // Use actual tender ID (starting from 1)
+        description: tenderData[0],
+        budget: tenderData[1].toString(),
+        requirementsCid: tenderData[2],
+        government: tenderData[3],
+        isActive: tenderData[4],
+        createdAt: tenderData[4].toString(), // Use index 4 since the tuple has 5 elements
+      };
+    });
 
     // Update cache
     tenderCache = { data: tenders, timestamp: Date.now() };

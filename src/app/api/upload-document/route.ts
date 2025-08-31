@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         type: file.type
       });
 
-    } catch (storageError) {
+    } catch {
       console.log("Storage service creation failed, attempting payment setup...");
       
       // If storage creation fails, we need to set up payments
