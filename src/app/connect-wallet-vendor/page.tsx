@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAccount, useConnect, useDisconnect, useSwitchChain, type Connector } from "wagmi";
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import { sepolia } from "@wagmi/core/chains";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
@@ -11,14 +11,15 @@ import Image from "next/image";
 // Disable SSR for this component to avoid wagmi serialization issues
 const ConnectWalletComponent = () => {
   const { isConnected, address, chainId } = useAccount();
-  const { connect, connectors, error: connectError } = useConnect();
+  const { error: connectError } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
 
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
+
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+
   const [organizationName, setOrganizationName] = useState("");
   const [headOfBids, setHeadOfBids] = useState("");
   const [location, setLocation] = useState("");
@@ -39,18 +40,7 @@ const ConnectWalletComponent = () => {
     }
   }, [isConnected, chainId, address]);
 
-  const handleConnect = async (connector: Connector) => {
-    if (isConnecting) return; // Prevent multiple clicks
-    
-    try {
-      setIsConnecting(true);
-      await connect({ connector });
-    } catch (error) {
-      console.error("Connection error:", error);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
+
 
   const handleSwitchNetwork = async () => {
     try {
@@ -149,7 +139,7 @@ const ConnectWalletComponent = () => {
                     value={organizationName}
                     onChange={(e) => setOrganizationName(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., ABC Construction Co."
+                    placeholder="e.g., Construcciones ABC S.A."
                   />
                 </div>
 
@@ -177,7 +167,7 @@ const ConnectWalletComponent = () => {
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., New York, NY"
+                    placeholder="e.g., San José, Costa Rica"
                   />
                 </div>
 
@@ -190,7 +180,7 @@ const ConnectWalletComponent = () => {
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., https://www.abcconstruction.com"
+                    placeholder="e.g., https://www.abcconstrucciones.com"
                   />
                 </div>
 
@@ -246,7 +236,7 @@ const ConnectWalletComponent = () => {
                   href="/vendor-dashboard" 
                   className="block w-full py-3 px-6 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors text-center select-none"
                 >
-                  → Vendor Dashboard
+                  → Vendor Settings
                 </Link>
               </div>
               <div className="mt-6">

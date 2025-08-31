@@ -6,10 +6,18 @@ import { sepolia } from "@wagmi/core/chains";
 import Link from "next/link";
 import Image from "next/image";
 
+type GovernmentData = {
+  governmentName: string;
+  headOfTenders: string;
+  location: string;
+  address: string;
+  registeredAt: string;
+};
+
 export default function GovernmentSettings() {
   const { isConnected, address, chainId } = useAccount();
   const { disconnect } = useDisconnect();
-  const [governmentData, setGovernmentData] = useState<any>(null);
+  const [governmentData, setGovernmentData] = useState<GovernmentData | null>(null);
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
 
   useEffect(() => {

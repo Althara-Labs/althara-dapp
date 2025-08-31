@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
+
 
 export default function VendorDashboard() {
   const router = useRouter();
-  const { isConnected, address } = useAccount();
+
 
   useEffect(() => {
     // Redirect to vendor settings

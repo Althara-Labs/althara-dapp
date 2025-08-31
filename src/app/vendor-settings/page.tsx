@@ -6,10 +6,19 @@ import { sepolia } from "@wagmi/core/chains";
 import Link from "next/link";
 import Image from "next/image";
 
+type VendorData = {
+  organizationName: string;
+  headOfBids: string;
+  location: string;
+  website?: string;
+  address: string;
+  registeredAt: string;
+};
+
 export default function VendorSettings() {
   const { isConnected, address, chainId } = useAccount();
   const { disconnect } = useDisconnect();
-  const [vendorData, setVendorData] = useState<any>(null);
+  const [vendorData, setVendorData] = useState<VendorData | null>(null);
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
 
   useEffect(() => {

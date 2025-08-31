@@ -12,7 +12,6 @@ import { WagmiConfig } from "wagmi";
 import {
   sepolia,
 } from 'wagmi/chains';
-import { metaMask } from "wagmi/connectors";
 import { ReactNode } from "react";
 
 const config = getDefaultConfig({
