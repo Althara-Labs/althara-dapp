@@ -7,11 +7,11 @@ import { tenderContractAddress, tenderContractABI } from "../../../lib/contracts
 interface Tender {
   id: number;
   description: string;
-  budget: bigint;
+  budget: string; // Changed from bigint to string since API returns string
   requirementsCid: string;
-  government: string;
-  isActive: boolean;
-  createdAt: bigint;
+  government: boolean; // Changed from string to boolean based on API response
+  isActive: any; // Changed to any since API returns array
+  createdAt: string; // Changed from bigint to string since API returns string
 }
 
 export default function TendersPage() {
@@ -20,6 +20,7 @@ export default function TendersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [isCached, setIsCached] = useState(false);
 
   // Fetch all tenders efficiently - no wallet required
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function TendersPage() {
         
         if (data.success) {
           setTenders(data.tenders.reverse()); // Show newest first
+          setIsCached(data.cached || false);
         } else {
           setError(data.error || "Failed to load tenders");
         }
@@ -59,6 +61,7 @@ export default function TendersPage() {
         .then(data => {
           if (data.success) {
             setTenders(data.tenders.reverse());
+            setIsCached(data.cached || false);
           } else {
             setError(data.error || "Failed to load tenders");
           }
@@ -73,11 +76,12 @@ export default function TendersPage() {
     }, 1000);
   };
 
-  const formatBudget = (budget: bigint) => {
+  const formatBudget = (budget: string) => {
     return `${Number(budget) / 10 ** 18} ETH`;
   };
 
-  const formatDate = (timestamp: bigint) => {
+  const formatDate = (timestamp: string) => {
+    if (!timestamp || timestamp === '') return 'Unknown';
     const date = new Date(Number(timestamp) * 1000);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -113,30 +117,15 @@ export default function TendersPage() {
     }
   };
 
-  const truncateAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  const truncateAddress = (address: string | boolean) => {
+    if (typeof address === 'string') {
+      return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    }
+    return 'Unknown';
   };
 
-  if (!isConnected) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-8">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mb-4">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h1 className="text-4xl font-bold text-black mb-3">All Tenders</h1>
-            <p className="text-black text-lg mb-6">Please connect your wallet to view tenders.</p>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto">
-              <p className="text-yellow-800">You need to connect your wallet first to access this page.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Remove wallet requirement for viewing tenders - anyone can browse
+  // Wallet is only needed for creating tenders or bidding
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-8">
@@ -148,14 +137,33 @@ export default function TendersPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h1 className="text-4xl font-bold text-black mb-3">All Tenders</h1>
-            <p className="text-black text-lg max-w-2xl mx-auto">Browse all available tenders and submit your bids. Each tender is stored securely on the blockchain.</p>
+                         <h1 className="text-4xl font-bold text-black mb-3">All Tenders</h1>
+             <p className="text-black text-lg max-w-2xl mx-auto">Browse all available tenders. Connect your wallet to submit bids. Each tender is stored securely on the blockchain.</p>
+            <div className="mt-4">
+              <button
+                onClick={handleRetry}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                Refresh Tenders
+              </button>
+            </div>
           </div>
 
           {loading && (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               <span className="ml-3 text-gray-600 text-lg">Loading tenders...</span>
+            </div>
+          )}
+
+          {!loading && isCached && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+              <div className="flex items-center">
+                <svg className="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-blue-800 text-sm">Showing cached data for faster loading</span>
+              </div>
             </div>
           )}
 
@@ -219,28 +227,32 @@ export default function TendersPage() {
                         <span className="text-sm text-gray-600">{formatDate(tender.createdAt)}</span>
                       </div>
 
-                      {tender.requirementsCid && (
-                        <div className="pt-3 border-t border-gray-200">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-700">Documents:</span>
-                            <span className="text-xs text-blue-600 font-mono bg-blue-50 px-2 py-1 rounded">
-                              {tender.requirementsCid.slice(0, 8)}...
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                                             {tender.requirementsCid && tender.requirementsCid !== '[object Object]' && (
+                         <div className="pt-3 border-t border-gray-200">
+                           <div className="flex items-center justify-between">
+                             <span className="text-sm font-medium text-gray-700">Documents:</span>
+                             <span className="text-xs text-blue-600 font-mono bg-blue-50 px-2 py-1 rounded">
+                               {tender.requirementsCid.slice(0, 8)}...
+                             </span>
+                           </div>
+                         </div>
+                       )}
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-gray-200">
-                      <button
-                        className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                        onClick={() => {
-                          // TODO: Navigate to bidding page
-                          console.log(`Navigate to bid on tender ${tender.id}`);
-                        }}
-                      >
-                        View Details & Bid
-                      </button>
+                                             <button
+                         className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                         onClick={() => {
+                           if (!isConnected) {
+                             alert('Please connect your wallet to bid on this tender');
+                             return;
+                           }
+                           // TODO: Navigate to bidding page
+                           console.log(`Navigate to bid on tender ${tender.id}`);
+                         }}
+                       >
+                         {isConnected ? 'View Details & Bid' : 'Connect Wallet to Bid'}
+                       </button>
                     </div>
                   </div>
                 );

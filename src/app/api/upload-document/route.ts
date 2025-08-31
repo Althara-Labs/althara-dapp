@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       console.log(`File uploaded successfully. CID: ${uploadResult.commp}`);
       
       return NextResponse.json({
-        cid: uploadResult.commp,
+        cid: String(uploadResult.commp), // Ensure CID is a string
         filename: file.name,
         size: file.size,
         type: file.type
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
         console.log(`File uploaded successfully. CID: ${uploadResult.commp}`);
         
         return NextResponse.json({
-          cid: uploadResult.commp,
+          cid: String(uploadResult.commp), // Ensure CID is a string
           filename: file.name,
           size: file.size,
           type: file.type

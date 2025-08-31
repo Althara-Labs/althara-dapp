@@ -29,7 +29,7 @@ export async function GET(
     });
 
     // Get tender data from smart contract
-    const tender = await contract.read.getTender([BigInt(tenderId)]);
+    const tender = await contract.read.getTenderDetails([BigInt(tenderId)]);
 
     if (!tender) {
       return NextResponse.json(

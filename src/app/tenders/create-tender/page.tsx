@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useAccount, useContractRead, useContractWrite } from "wagmi";
+import { useRouter } from "next/navigation";
 import { tenderContractAddress, tenderContractABI } from "../../../../lib/contracts/index";
 // GOVERNMENT_ROLE hash - keccak256 hash of "GOVERNMENT_ROLE"
 const GOVERNMENT_ROLE = "0x71840dc4906352362b0cdaf79870196c8e42acafade72d5d5a6d59291253dce1";
 
 export default function CreateTender() {
+  const router = useRouter();
   const { address, isConnected } = useAccount();
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState("open");
@@ -59,7 +61,7 @@ export default function CreateTender() {
   }, [hasGovernmentRole]);
 
   // Contract write for createTender
-  const { write: createTender, isSuccess: isTenderCreated, isPending: isCreating } = useContractWrite();
+  const { writeContract: createTender, isSuccess: isTenderCreated, isPending: isCreating } = useContractWrite();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -92,10 +94,18 @@ export default function CreateTender() {
       }
 
       const data = await response.json();
+      console.log('API response:', data);
+      console.log('API response type:', typeof data);
+      console.log('CID property:', data.cid);
+      console.log('CID property type:', typeof data.cid);
       
       if (data.cid) {
-        setRequirementsCid(data.cid);
-        setSuccess(`Document uploaded successfully! CID: ${data.cid}`);
+        console.log('CID received:', data.cid, 'Type:', typeof data.cid);
+        console.log('CID JSON stringified:', JSON.stringify(data.cid));
+        const cidString = String(data.cid); // Ensure CID is a string
+        console.log('CID as string:', cidString, 'Type:', typeof cidString);
+        setRequirementsCid(cidString);
+        setSuccess(`Document uploaded successfully! CID: ${cidString}`);
       } else {
         const errorMessage = typeof data.error === 'string' ? data.error : "Upload failed - no CID returned";
         setError(errorMessage);
@@ -143,6 +153,16 @@ export default function CreateTender() {
   useEffect(() => {
     if (isTenderCreated) {
       setSuccess("Tender created successfully!");
+      
+      // Invalidate cache to ensure new tender appears in listing
+      fetch('/api/tenders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'invalidate-cache' }),
+      }).catch(err => console.error('Failed to invalidate cache:', err));
+      
       // Reset form
       setTitle("");
       setDescription("");
@@ -212,6 +232,18 @@ export default function CreateTender() {
       <div className="max-w-5xl mx-auto px-4">
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           <div className="mb-8 text-center">
+            <div className="flex justify-between items-center mb-6">
+              <button
+                onClick={() => router.push('/tenders')}
+                className="flex items-center px-4 py-2 text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Tenders
+              </button>
+              <div></div> {/* Spacer */}
+            </div>
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mb-4">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -379,12 +411,20 @@ export default function CreateTender() {
                    )}
                  </button>
 
-                 {requirementsCid && (
-                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                     <h3 className="text-sm font-medium text-green-800 mb-2">Upload Successful!</h3>
-                     <p className="text-xs text-green-700 break-all">CID: {requirementsCid}</p>
-                   </div>
-                 )}
+                                   {requirementsCid && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-green-800 mb-2">Upload Successful!</h3>
+                      <p className="text-xs text-green-700 break-all">CID: {String(requirementsCid)}</p>
+                      <div className="mt-3 pt-3 border-t border-green-200">
+                        <button
+                          onClick={() => router.push('/tenders')}
+                          className="text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                        >
+                          ← Back to Tenders
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                  <div className="border-t pt-6">
                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
@@ -416,13 +456,32 @@ export default function CreateTender() {
           {/* Error and Success Messages */}
           {error && (
             <div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800">{error}</p>
+              <p className="text-red-800">{String(error)}</p>
             </div>
           )}
 
           {success && (
             <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-green-800">{success}</p>
+              <p className="text-green-800">{String(success)}</p>
+              {success.includes("Tender created successfully") && (
+                <div className="mt-4 flex gap-3">
+                  <button
+                    onClick={() => router.push('/tenders')}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  >
+                    View All Tenders
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSuccess(null);
+                      setError(null);
+                    }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                  >
+                    Create Another Tender
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
