@@ -1,3 +1,6 @@
+import Image from "next/image";
+
+
 export default function TechnologySection() {
   return (
     <section className="py-12 bg-gray-50">
@@ -5,14 +8,14 @@ export default function TechnologySection() {
         <p className="text-gray-600 mb-8 font-medium">Powered by</p>
         <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">F</span>
+            <div className="w-8 h-8 flex items-center justify-center">
+            <Image src="/filecoin-logo.png" alt="Filecoin Logo" width={32} height={32} />
             </div>
             <span className="font-semibold text-gray-900">Filecoin</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">E</span>
+            <div className="w-8 h-8 flex items-center justify-center">
+              <Image src="/ethereum-eth-logo.png" alt="Ethereum Logo" width={32} height={32} />
             </div>
             <span className="font-semibold text-gray-900">Ethereum</span>
           </div>

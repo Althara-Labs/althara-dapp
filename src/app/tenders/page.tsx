@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
+import { useRouter } from "next/navigation";
 import { tenderContractAddress, tenderContractABI } from "../../../lib/contracts/index";
+import Image from "next/image";
 
 interface Tender {
   id: number;
@@ -16,6 +18,7 @@ interface Tender {
 
 export default function TendersPage() {
   const { address, isConnected } = useAccount();
+  const router = useRouter();
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -165,10 +168,8 @@ export default function TendersPage() {
           <div className="flex justify-between items-center py-4">
             {/* Logo - Links to landing page */}
             <a href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+              <div className="w-8 h-8flex items-center justify-center">
+              <Image src="/althara pacta logo.png" alt="Althara Pacta" width={32} height={32} />
               </div>
               <span className="text-xl font-bold text-gray-900">Althara Pacta</span>
             </a>
@@ -181,6 +182,11 @@ export default function TendersPage() {
               >
                 Create Tender
               </a>
+              {isConnected && (
+                <span className="text-sm text-blue-600">
+                  Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -351,20 +357,31 @@ export default function TendersPage() {
                        )}
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                                             <button
-                         className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                         onClick={() => {
-                           if (!isConnected) {
-                             alert('Please connect your wallet to bid on this tender');
-                             return;
-                           }
-                           // TODO: Navigate to bidding page
-                           console.log(`Navigate to bid on tender ${tender.id}`);
-                         }}
-                       >
-                         {isConnected ? 'View Details & Bid' : 'Connect Wallet to Bid'}
-                       </button>
+                    <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
+                      {/* View Details Button - Always available */}
+                      <button
+                        className="w-full py-2 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium border border-gray-300"
+                        onClick={() => {
+                          router.push(`/tenders/${tender.id}`);
+                        }}
+                      >
+                        View Details
+                      </button>
+                      
+                      {/* Bid Button - Only for connected users */}
+                      <button
+                        className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                        onClick={() => {
+                          if (!isConnected) {
+                            alert('Please connect your wallet to bid on this tender');
+                            return;
+                          }
+                          // Navigate to tender details page
+                          router.push(`/tenders/${tender.id}`);
+                        }}
+                      >
+                        {isConnected ? 'Bid Now' : 'Connect Wallet to Bid'}
+                      </button>
                     </div>
                   </div>
                 );
