@@ -1,36 +1,212 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Althara Pacta - Decentralized Tender Management DApp
 
-## Getting Started
+A comprehensive decentralized application for managing government tenders using blockchain technology, built with Next.js, Tailwind CSS, and Web3 technologies.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Role-Based Access Control**: Government users can create tenders, vendors can submit bids
+- **Filecoin Integration**: Official documents stored on Filecoin Calibration testnet
+- **Smart Contract Management**: Tender and bid management on Sepolia testnet
+- **Modern UI**: Clean, responsive interface built with Tailwind CSS
+
+## Smart Contracts
+
+The DApp uses several smart contracts deployed on Sepolia testnet:
+
+- **TenderContract**: Manages tender creation and lifecycle
+- **BidSubmissionContract**: Handles bid submissions and evaluations
+- **EscrowContract**: Manages fund escrow for completed tenders
+- **FileStorageContract**: Stores Filecoin CIDs for documents
+
+## Environment Setup
+
+Create a `.env.local` file in the root directory:
+
+```env
+# Sepolia Testnet Configuration
+SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
+
+# Filecoin Calibration Testnet Private Key (for document uploads)
+PRIVATE_KEY=your_filecoin_private_key_here
+
+# Optional: Contract Addresses (if different from defaults)
+TENDER_CONTRACT_ADDRESS=0xbe8Aee28428602C5BC9ebD0D925b6c5160d59860
+BID_SUBMISSION_CONTRACT_ADDRESS=0xE422Ee2f487D60ed49B9f24eB530c67365946e6f
+ESCROW_CONTRACT_ADDRESS=0x474bA22A750a57C26EC356D5bfD7234113B4975A
+FILE_STORAGE_CONTRACT_ADDRESS=0x54A374a27857256887a5734D4a2996f8D9b7161B
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd althara-dapp
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Install dependencies:
+```bash
+npm install
+```
 
-## Learn More
+3. Set up environment variables (see Environment Setup above)
 
-To learn more about Next.js, take a look at the following resources:
+4. Run the development server:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Usage
 
-## Deploy on Vercel
+### For Government Users
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Connect Wallet**: Use MetaMask or another Web3 wallet
+2. **Verify Role**: Ensure your wallet has GOVERNMENT_ROLE assigned
+3. **Create Tender**:
+   - Navigate to `/tenders/create-tender`
+   - Fill in tender details (title, description, budget, deadline)
+   - Upload official documents (PDF, DOC, DOCX, TXT)
+   - Pay service fee (0.01 ETH)
+   - Submit tender
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### For Vendors
+
+1. **Connect Wallet**: Use MetaMask or another Web3 wallet
+2. **Browse Tenders**: View available tenders on the main page
+3. **Submit Bids**: 
+   - Select a tender
+   - Provide bid details and price
+   - Upload proposal documents
+   - Pay bid submission fee
+
+## Filecoin Integration
+
+The DApp uses the Synapse SDK to upload documents to Filecoin Calibration testnet:
+
+- **Network**: Calibration testnet
+- **RPC URL**: https://api.calibration.node.glif.io/rpc/v1
+- **Storage**: Documents are stored with Content Identifiers (CIDs)
+- **Supported Formats**: PDF, DOC, DOCX, TXT (max 10MB)
+
+## Smart Contract Functions
+
+### TenderContract
+
+- `createTender(description, budget, requirementsCid)`: Create a new tender
+- `hasRole(role, account)`: Check if account has specific role
+- `getTenderDetails(tenderId)`: Get tender information
+- `markTenderComplete(tenderId)`: Mark tender as completed
+
+### BidSubmissionContract
+
+- `submitBid(tenderId, price, description, proposalCid)`: Submit a bid
+- `acceptBid(tenderId, bidId)`: Accept a submitted bid
+- `rejectBid(tenderId, bidId)`: Reject a submitted bid
+
+## API Endpoints
+
+### `/api/upload-document`
+
+Handles file uploads to Filecoin:
+
+- **Method**: POST
+- **Content-Type**: multipart/form-data
+- **Parameters**: 
+  - `file`: File to upload
+- **Response**: 
+  ```json
+  {
+    "cid": "bafy...",
+    "filename": "document.pdf",
+    "size": 12345,
+    "type": "application/pdf"
+  }
+  ```
+
+## Development
+
+### Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   └── upload-document/
+│   │       └── route.ts
+│   ├── tenders/
+│   │   ├── create-tender/
+│   │   │   └── page.tsx
+│   │   └── page.tsx
+│   └── page.tsx
+├── components/
+│   └── landing/
+└── lib/
+    └── contracts/
+        └── index.ts
+```
+
+### Key Technologies
+
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Web3**: wagmi, viem
+- **Blockchain**: Ethereum (Sepolia), Filecoin (Calibration)
+- **Storage**: Synapse SDK for Filecoin
+- **Styling**: Tailwind CSS
+
+### Testing
+
+1. **Smart Contracts**: Deploy to Sepolia testnet
+2. **Filecoin**: Use Calibration testnet for document storage
+3. **Frontend**: Test with MetaMask connected to Sepolia
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"Access Denied" Error**:
+   - Ensure your wallet has GOVERNMENT_ROLE
+   - Contact administrator to assign role
+
+2. **File Upload Fails**:
+   - Check PRIVATE_KEY in .env
+   - Verify file size (max 10MB)
+   - Ensure file type is supported
+
+3. **Transaction Fails**:
+   - Ensure sufficient ETH for gas fees
+   - Check Sepolia network connection
+   - Verify contract addresses
+
+4. **Synapse SDK Errors**:
+   - Check Filecoin Calibration network status
+   - Verify private key format
+   - Ensure RPC endpoint is accessible
+
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+For support and questions:
+- Create an issue on GitHub
+- Contact the development team
+- Check the documentation
+
+## Security
+
+- Private keys should never be committed to version control
+- Use environment variables for sensitive data
+- Regularly update dependencies
+- Test thoroughly on testnets before mainnet deployment
