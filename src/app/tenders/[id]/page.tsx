@@ -90,6 +90,8 @@ export default function TenderDetailsPage() {
 
   const { writeContract: markComplete, data: markCompleteData } = useWriteContract();
 
+  const { writeContract: acceptBid, data: acceptBidData } = useWriteContract();
+
   // Handle transaction success/error states
   useEffect(() => {
     if (submitBidData) {
@@ -107,6 +109,20 @@ export default function TenderDetailsPage() {
       window.location.reload();
     }
   }, [markCompleteData]);
+
+  useEffect(() => {
+    if (acceptBidData) {
+      // Bid was accepted successfully, now mark the tender as complete
+      markComplete({
+        address: tenderContractAddress,
+        abi: tenderContractABI,
+        functionName: "markTenderComplete",
+        args: [BigInt(tenderId)]
+      });
+      
+      setAcceptingBid(null);
+    }
+  }, [acceptBidData, markComplete, tenderId]);
 
   // Parse tender data
   useEffect(() => {
@@ -258,31 +274,21 @@ export default function TenderDetailsPage() {
     try {
       setAcceptingBid(bidIndex);
       setShowAcceptConfirmation(null);
+      setError(null);
       
-      // Simulate transaction processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const selectedBid = bids[bidIndex];
       
-      // Update bid status locally (in a real app, this would be a smart contract call)
-      setBids(prevBids => 
-        prevBids.map((bid, index) => 
-          index === bidIndex 
-            ? { ...bid, status: 1 } // 1 = Accepted
-            : bid
-        )
-      );
-      
-      // Show success message
-      alert(`Bid accepted! Payment of ${formatEther(bids[bidIndex].price)} ETH will be transferred from government to vendor.`);
-      
-      // Refresh the page to update tender status
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // First, accept the bid in the bid submission contract
+      acceptBid({
+        address: bidSubmissionContractAddress,
+        abi: bidSubmissionContractABI,
+        functionName: "acceptBid",
+        args: [BigInt(tenderId), BigInt(selectedBid.tenderId)],
+      });
       
     } catch (error) {
       console.error("Error accepting bid:", error);
       setError("Failed to accept bid. Please try again.");
-    } finally {
       setAcceptingBid(null);
     }
   };
@@ -415,11 +421,17 @@ export default function TenderDetailsPage() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Tender Details</h2>
-            {tender.completed && (
-              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                Completed
-              </span>
-            )}
+            <div className="flex items-center space-x-2">
+              {tender.completed ? (
+                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                  Completed
+                </span>
+              ) : (
+                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  Active
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -477,19 +489,7 @@ export default function TenderDetailsPage() {
                   </div>
                 )}
 
-              {isGovernment && !tender.completed && (
-                <button
-                  onClick={() => markComplete({
-                    address: tenderContractAddress,
-                    abi: tenderContractABI,
-                    functionName: "markTenderComplete",
-                    args: [BigInt(tenderId)]
-                  })}
-                  className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Mark Tender Complete
-                </button>
-              )}
+
             </div>
           </div>
         </div>
@@ -660,6 +660,20 @@ export default function TenderDetailsPage() {
                          {acceptingBid === index ? "Processing..." : "Accept Bid"}
                        </button>
                      )}
+                     
+                     {/* Show accepted status */}
+                     {bid.status === 1 && (
+                       <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                         Accepted
+                       </span>
+                     )}
+                     
+                     {/* Show rejected status */}
+                     {bid.status === 2 && (
+                       <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-medium">
+                         Rejected
+                       </span>
+                     )}
                    </div>
                  </div>
                ))}
@@ -728,8 +742,13 @@ export default function TenderDetailsPage() {
                  </p>
                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                    <p className="text-yellow-800 text-sm">
-                     <strong>Note:</strong> This will trigger a payment transaction of {formatEther(bids[showAcceptConfirmation].price)} ETH from the government to the vendor.
+                     <strong>Note:</strong> This will:
                    </p>
+                   <ul className="text-yellow-800 text-sm mt-2 list-disc list-inside">
+                     <li>Accept the selected bid</li>
+                     <li>Close the tender (mark as completed)</li>
+                     <li>Trigger a payment transaction of {formatEther(bids[showAcceptConfirmation].price)} ETH from government to vendor</li>
+                   </ul>
                  </div>
                </div>
                <div className="flex space-x-4">
@@ -738,7 +757,7 @@ export default function TenderDetailsPage() {
                    disabled={acceptingBid === showAcceptConfirmation}
                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
                  >
-                   {acceptingBid === showAcceptConfirmation ? "Processing..." : "Accept & Pay"}
+                   {acceptingBid === showAcceptConfirmation ? "Processing..." : "Accept Bid & Close Tender"}
                  </button>
                  <button
                    onClick={() => setShowAcceptConfirmation(null)}
