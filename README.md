@@ -15,16 +15,26 @@ The DApp uses several smart contracts deployed on Sepolia testnet:
 
 - **TenderContract**: Manages tender creation and lifecycle
 - **BidSubmissionContract**: Handles bid submissions and evaluations
-- **EscrowContract**: Manages fund escrow for completed tenders
-- **FileStorageContract**: Stores Filecoin CIDs for documents
 
 ## Environment Setup
 
-Create a `.env.local` file in the root directory:
+Create a `.env` file in the root directory with `cp .env.example .env`:
 
 ```env
 # Sepolia Testnet Configuration
 SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
+
+# Alchemy API Key
+ALCHEMY_API_KEY="YOUR_API_KEY"
+
+# Wallet Private Key
+PRIVATE_KEY=""
+
+# Infura API Key
+NEXT_PUBLIC_INFURA_API_KEY="YOUR_API_KEY"
+
+# WalletConnect Project ID
+NEXT_PUBLIC_PROJECT_ID="YOUR_API_KEY"
 
 # Filecoin Calibration Testnet Private Key (for document uploads)
 PRIVATE_KEY=your_filecoin_private_key_here
@@ -32,15 +42,13 @@ PRIVATE_KEY=your_filecoin_private_key_here
 # Optional: Contract Addresses (if different from defaults)
 TENDER_CONTRACT_ADDRESS=0xbe8Aee28428602C5BC9ebD0D925b6c5160d59860
 BID_SUBMISSION_CONTRACT_ADDRESS=0xE422Ee2f487D60ed49B9f24eB530c67365946e6f
-ESCROW_CONTRACT_ADDRESS=0x474bA22A750a57C26EC356D5bfD7234113B4975A
-FILE_STORAGE_CONTRACT_ADDRESS=0x54A374a27857256887a5734D4a2996f8D9b7161B
 ```
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone <https://github.com/Althara-Labs/althara-dapp>
 cd althara-dapp
 ```
 
@@ -63,7 +71,7 @@ npm run dev
 ### For Government Users
 
 1. **Connect Wallet**: Use MetaMask or another Web3 wallet
-2. **Verify Role**: Ensure your wallet has GOVERNMENT_ROLE assigned
+2. **Verify Role**: Ensure your wallet has GOVERNMENT_ROLE assigned (ask an admin or use /admin)
 3. **Create Tender**:
    - Navigate to `/tenders/create-tender`
    - Fill in tender details (title, description, budget, deadline)
@@ -161,30 +169,6 @@ src/
 2. **Filecoin**: Use Calibration testnet for document storage
 3. **Frontend**: Test with MetaMask connected to Sepolia
 
-## Troubleshooting
-
-### Common Issues
-
-1. **"Access Denied" Error**:
-   - Ensure your wallet has GOVERNMENT_ROLE
-   - Contact administrator to assign role
-
-2. **File Upload Fails**:
-   - Check PRIVATE_KEY in .env
-   - Verify file size (max 10MB)
-   - Ensure file type is supported
-
-3. **Transaction Fails**:
-   - Ensure sufficient ETH for gas fees
-   - Check Sepolia network connection
-   - Verify contract addresses
-
-4. **Synapse SDK Errors**:
-   - Check Filecoin Calibration network status
-   - Verify private key format
-   - Ensure RPC endpoint is accessible
-
-
 ## Contributing
 
 1. Fork the repository
@@ -204,9 +188,3 @@ For support and questions:
 - Contact the development team
 - Check the documentation
 
-## Security
-
-- Private keys should never be committed to version control
-- Use environment variables for sensitive data
-- Regularly update dependencies
-- Test thoroughly on testnets before mainnet deployment
